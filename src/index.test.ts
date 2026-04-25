@@ -76,6 +76,29 @@ const setReasoningEffort = async (
 ) => plugin.tool![toolName]!.execute(args, context as never);
 
 describe("AdaptiveThinkingPlugin", () => {
+  test("uses defaults when no options are provided", async () => {
+    const sessionID = "default-options";
+    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
+    const plugin = await AdaptiveThinkingPlugin({ client } as never);
+    const system: string[] = [];
+
+    await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
+    await plugin["experimental.chat.system.transform"]!(
+      {
+        sessionID,
+        model: { variants },
+      } as never,
+      { system },
+    );
+
+    expect(plugin.tool?.set_reasoning_effort?.description).toBe("Set your reasoning effort");
+    expect(client.session.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ body: expect.objectContaining({ variant: "high" }) }),
+    );
+    expect(system[0]).toContain("You MUST manage reasoning effort actively");
+    expect(system[0]).toContain("set_reasoning_effort");
+  });
+
   test("returns no hooks when disabled", async () => {
     const { client } = createClient("disabled-plugin");
     const plugin = await AdaptiveThinkingPlugin({ client } as never, { enabled: false });
