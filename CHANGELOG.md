@@ -1,5 +1,11 @@
 # opencode-adaptive-thinking
 
+## 0.1.1
+
+### Patch Changes
+
+- [#6](https://github.com/ian-pascoe/opencode-adaptive-thinking/pull/6) [`132dce4`](https://github.com/ian-pascoe/opencode-adaptive-thinking/commit/132dce4cc88371244472209d801f688ba2c739fb) Thanks [@ian-pascoe](https://github.com/ian-pascoe)! - Bound adaptive-thinking session state with an LRU cache to prevent unbounded growth across long-running OpenCode processes.
+
 ## 0.1.0
 
 ### Minor Changes
