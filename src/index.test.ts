@@ -103,6 +103,25 @@ describe("AdaptiveThinkingPlugin", () => {
     });
   });
 
+  test("keeps log service name internal", async () => {
+    const sessionID = "fixed-service-name";
+    const { client, toolContext } = createClient(sessionID);
+    client.session.messages.mockResolvedValueOnce({
+      error: { data: { message: "unavailable" } },
+    } as never);
+    const plugin = await AdaptiveThinkingPlugin({ client } as never, {
+      serviceName: "custom-service",
+    });
+
+    await setReasoningEffort(plugin, { level: "low", persist: false }, toolContext);
+
+    expect(client.app.log).toHaveBeenCalledWith({
+      body: expect.objectContaining({
+        service: "opencode-adaptive-thinking",
+      }),
+    });
+  });
+
   test("uses configured tool name and description", async () => {
     const sessionID = "custom-tool";
     const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);

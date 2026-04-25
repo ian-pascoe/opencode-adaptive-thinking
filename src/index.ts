@@ -1,8 +1,9 @@
 import { tool, type Plugin } from "@opencode-ai/plugin";
 import type { Agent, Message, Model, Part, Provider } from "@opencode-ai/sdk/v2";
-import { ConfigSchema, configDefaults } from "./config.js";
+import { ConfigSchema } from "./config.js";
 
 const z = tool.schema;
+const serviceName = "opencode-adaptive-thinking";
 
 const state = {
   currentVariant: new Map<string, string>(),
@@ -24,7 +25,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     });
     client.app.log({
       body: {
-        service: configDefaults.serviceName,
+        service: serviceName,
         level: "error",
         message: `Invalid Adaptive Thinking plugin configuration: ${configParseResult.error.message}`,
       },
@@ -76,7 +77,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     if (messagesResponse.error) {
       client.app.log({
         body: {
-          service: config.serviceName,
+          service: serviceName,
           level: "error",
           message: `Failed to retrieve messages for session ${sessionID}: ${JSON.stringify(messagesResponse.error.data)}`,
         },
@@ -99,7 +100,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     if (providers.error) {
       client.app.log({
         body: {
-          service: config.serviceName,
+          service: serviceName,
           level: "error",
           message: `Failed to retrieve providers for session ${sessionID}: ${JSON.stringify(providers.error)}`,
         },
@@ -121,7 +122,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     if (messagesResponse.error) {
       client.app.log({
         body: {
-          service: config.serviceName,
+          service: serviceName,
           level: "error",
           message: `Failed to retrieve messages for session ${sessionID}: ${JSON.stringify(messagesResponse.error.data)}`,
         },
@@ -144,7 +145,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     if (agentsResponse.error) {
       client.app.log({
         body: {
-          service: "opencode-adaptive-thinking",
+          service: serviceName,
           level: "error",
           message: `Failed to retrieve agents for session ${sessionID}: ${JSON.stringify(agentsResponse.error)}`,
         },
@@ -224,7 +225,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
         if (promptResponse.error) {
           client.app.log({
             body: {
-              service: config.serviceName,
+              service: serviceName,
               level: "error",
               message: `Failed to reset reasoning effort on session idle: ${JSON.stringify(promptResponse.error.data)}`,
             },

@@ -9,7 +9,6 @@ export const defaultSystemPrompt =
 export const configDefaults = {
   enabled: true,
   quiet: false,
-  serviceName: "opencode-adaptive-thinking",
   toolName: "set_reasoning_effort",
   toolDescription: "Set your reasoning effort",
   systemPrompt: defaultSystemPrompt,
@@ -19,7 +18,6 @@ export const ConfigSchema = z
   .object({
     enabled: z.boolean().default(configDefaults.enabled),
     quiet: z.boolean().default(configDefaults.quiet),
-    serviceName: z.string().default(configDefaults.serviceName),
     toolName: z.string().default(configDefaults.toolName),
     toolDescription: z.string().default(configDefaults.toolDescription),
     systemPrompt: z.string().default(configDefaults.systemPrompt),

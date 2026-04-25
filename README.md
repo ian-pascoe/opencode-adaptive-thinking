@@ -20,7 +20,6 @@ The plugin accepts these optional settings:
 
 - `enabled`: enable or disable the plugin without removing it from config. Defaults to `true`.
 - `quiet`: suppress toast notifications for configuration errors. Defaults to `false`.
-- `serviceName`: service name used in OpenCode logs. Defaults to `opencode-adaptive-thinking`.
 - `toolName`: name of the reasoning-effort tool exposed to agents. Defaults to `set_reasoning_effort`.
 - `toolDescription`: description for the reasoning-effort tool. Defaults to `Set your reasoning effort`.
 - `systemPrompt`: custom adaptive-thinking guidance injected into the system prompt.
@@ -36,7 +35,6 @@ The plugin accepts these optional settings:
       {
         "enabled": true,
         "quiet": false,
-        "serviceName": "opencode-adaptive-thinking",
         "toolName": "set_reasoning_effort",
         "toolDescription": "Set your reasoning effort",
         "systemPrompt": "Actively choose the lowest reasoning effort that can safely complete the task. Raise effort for ambiguity, debugging, risky changes, or multi-step synthesis."
