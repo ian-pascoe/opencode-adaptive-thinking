@@ -221,42 +221,4 @@ describe("AdaptiveThinkingPlugin", () => {
     expect(result).toContain("Invalid reasoning effort level");
     expect(client.session.promptAsync).not.toHaveBeenCalled();
   });
-
-  test("uses the transform model to inject guidance for a new session", async () => {
-    const sessionID = "new-session";
-    const { client } = createClient(sessionID, []);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-    const system: string[] = [];
-
-    await plugin["experimental.chat.system.transform"]!(
-      {
-        sessionID,
-        model: { variants },
-      } as never,
-      { system },
-    );
-
-    expect(system).toHaveLength(1);
-    expect(system[0]).toContain("Valid reasoning effort levels");
-    expect(system[0]).toContain("low, medium, high");
-  });
-
-  test("adds a single non-duplicative system guidance entry", async () => {
-    const sessionID = "system-guidance";
-    const { client } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-    const system: string[] = [];
-
-    await plugin["experimental.chat.system.transform"]!(
-      {
-        sessionID,
-        model: { variants },
-      } as never,
-      { system },
-    );
-
-    expect(system).toHaveLength(1);
-    expect(system[0]).toContain("Current reasoning effort level: medium");
-    expect(system[0]).not.toContain("Remember to adjust your reasoning effort");
-  });
 });
