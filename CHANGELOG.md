@@ -1,5 +1,11 @@
 # opencode-adaptive-thinking
 
+## 0.1.0
+
+### Minor Changes
+
+- [#3](https://github.com/ian-pascoe/opencode-adaptive-thinking/pull/3) [`dbe24bc`](https://github.com/ian-pascoe/opencode-adaptive-thinking/commit/dbe24bc3138eb19473e2f07dc62c0879776bf44b) Thanks [@ian-pascoe](https://github.com/ian-pascoe)! - Add plugin options for enabling/disabling the plugin, customizing the reasoning-effort tool, and overriding injected system guidance.
+
 ## 0.0.2
 
 ### Patch Changes
