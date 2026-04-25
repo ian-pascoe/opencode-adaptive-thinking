@@ -75,6 +75,15 @@ const setReasoningEffort = async (
   toolName = "set_reasoning_effort",
 ) => plugin.tool![toolName]!.execute(args, context as never);
 
+const touchTemporarySession = async (sessionID: string) => {
+  const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
+  const plugin = await AdaptiveThinkingPlugin({ client } as never);
+
+  await setReasoningEffort(plugin, { level: "low", persist: false }, toolContext);
+
+  return { client, plugin };
+};
+
 describe("AdaptiveThinkingPlugin", () => {
   test("uses defaults when no options are provided", async () => {
     const sessionID = "default-options";
@@ -215,6 +224,20 @@ describe("AdaptiveThinkingPlugin", () => {
         parts: [{ ignored: true, synthetic: true }],
       },
     });
+  });
+
+  test("evicts oldest session state when the cache is full", async () => {
+    const oldest = await touchTemporarySession("lru-oldest");
+
+    for (let i = 0; i < 500; i++) {
+      await touchTemporarySession(`lru-session-${i}`);
+    }
+
+    await oldest.plugin.event!({
+      event: { type: "session.idle", properties: { sessionID: "lru-oldest" } },
+    } as never);
+
+    expect(oldest.client.session.promptAsync).toHaveBeenCalledTimes(1);
   });
 
   test("does not reset persisted reasoning effort on idle", async () => {
