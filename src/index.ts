@@ -1,29 +1,7 @@
 import { tool, type Plugin } from "@opencode-ai/plugin";
+import type { Agent, Message, Model, Part, Provider } from "@opencode-ai/sdk/v2";
 
 const z = tool.schema;
-
-type MessageInfo = {
-  agent?: string;
-  model?: {
-    providerID: string;
-    modelID: string;
-    variant?: string;
-  };
-};
-
-type SessionMessage = {
-  info: MessageInfo;
-  parts: unknown[];
-};
-
-type ModelWithVariants = {
-  variants?: Record<string, unknown>;
-};
-
-type AgentWithVariant = {
-  name: string;
-  variant?: string;
-};
 
 const state = {
   currentVariant: new Map<string, string>(),
@@ -35,8 +13,8 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
   type PromptAsyncOptions = Parameters<typeof client.session.promptAsync>[0];
   type PromptAsyncBody = NonNullable<PromptAsyncOptions["body"]> & { variant: string };
 
-  const getModelVariants = (model: unknown): string[] => {
-    const variants = (model as ModelWithVariants | undefined)?.variants;
+  const getModelVariants = (model: Model | undefined): string[] => {
+    const variants = model?.variants;
     if (!variants) return [];
     return Object.keys(variants);
   };
@@ -66,7 +44,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
     });
   };
 
-  const resolveValidVariants = async (sessionID: string, model?: unknown): Promise<string[]> => {
+  const resolveValidVariants = async (sessionID: string, model?: Model): Promise<string[]> => {
     const inputModelVariants = getModelVariants(model);
     if (inputModelVariants.length > 0) return inputModelVariants;
 
@@ -84,10 +62,10 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
       return [];
     }
     let modelInfo: { providerID: string; modelID: string } | undefined;
-    const messages = messagesResponse.data as SessionMessage[];
+    const messages = messagesResponse.data as Array<{ info: Message; parts: Array<Part> }>;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i]!;
-      if (message.info.model) {
+      if ("model" in message.info) {
         modelInfo = message.info.model;
         break;
       }
@@ -107,11 +85,11 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
       return [];
     }
     const provider = providers.data?.all.find((p) => p.id === modelInfo.providerID) as
-      | { models: Record<string, ModelWithVariants> }
+      | Provider
       | undefined;
     if (!provider) return [];
 
-    return getModelVariants(provider.models[modelInfo.modelID]);
+    return getModelVariants(provider.models[modelInfo.modelID] as Model | undefined);
   };
 
   const resolveCurrentVariant = async (sessionID: string): Promise<string | undefined> => {
@@ -129,10 +107,10 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
       return;
     }
     let agentName: string | undefined;
-    const messages = messagesResponse.data as SessionMessage[];
+    const messages = messagesResponse.data as Array<{ info: Message; parts: Array<Part> }>;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i]!;
-      if (message.info.model?.variant) {
+      if ("model" in message.info && message.info.model.variant) {
         return message.info.model.variant;
       }
       agentName = message.info.agent;
@@ -152,7 +130,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
       return;
     }
     const agents = agentsResponse.data;
-    const agent = agents?.find((a) => a.name === agentName) as AgentWithVariant | undefined;
+    const agent = agents?.find((a) => a.name === agentName) as Agent | undefined;
     return agent?.variant;
   };
 
@@ -240,7 +218,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }) => {
     "experimental.chat.system.transform": async ({ sessionID, model }, { system }) => {
       if (!sessionID) return;
 
-      const variants = await resolveValidVariants(sessionID, model);
+      const variants = await resolveValidVariants(sessionID, model as Model);
       if (variants.length === 0) return;
 
       let variant = state.currentVariant.get(sessionID) ?? state.persistedVariant.get(sessionID);
