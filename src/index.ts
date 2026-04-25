@@ -4,12 +4,42 @@ import { ConfigSchema } from "./config.js";
 
 const z = tool.schema;
 const serviceName = "opencode-adaptive-thinking";
+const maxSessionStateSize = 500;
 
-const state = {
-  currentVariant: new Map<string, string>(),
-  persistedVariant: new Map<string, string>(),
-  temporaryResetVariant: new Map<string, string>(),
+type SessionState = {
+  currentVariant?: string;
+  persistedVariant?: string;
+  temporaryResetVariant?: string;
 };
+
+class SessionStateCache {
+  private readonly entries = new Map<string, SessionState>();
+
+  constructor(private readonly maxSize: number) {}
+
+  get(sessionID: string) {
+    const entry = this.entries.get(sessionID);
+    if (!entry) return;
+
+    this.entries.delete(sessionID);
+    this.entries.set(sessionID, entry);
+    return entry;
+  }
+
+  update(sessionID: string, update: (entry: SessionState) => void) {
+    const entry = this.get(sessionID) ?? {};
+    update(entry);
+    this.entries.set(sessionID, entry);
+
+    while (this.entries.size > this.maxSize) {
+      const oldestSessionID = this.entries.keys().next().value;
+      if (!oldestSessionID) break;
+      this.entries.delete(oldestSessionID);
+    }
+  }
+}
+
+const state = new SessionStateCache(maxSessionStateSize);
 
 export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
   type PromptAsyncOptions = Parameters<typeof client.session.promptAsync>[0];
@@ -184,9 +214,10 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
             return `Invalid reasoning effort level: ${level}. Valid levels: ${validVariants.join(", ")}.`;
           }
 
+          const sessionState = state.get(sessionID);
           const resetVariant = persist
             ? undefined
-            : (state.persistedVariant.get(sessionID) ?? (await resolveCurrentVariant(sessionID)));
+            : (sessionState?.persistedVariant ?? (await resolveCurrentVariant(sessionID)));
 
           const promptResponse = await sendVariantPrompt(
             sessionID,
@@ -197,15 +228,17 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
             return `Failed to set reasoning effort: ${JSON.stringify(promptResponse.error.data)}`;
           }
 
-          state.currentVariant.set(sessionID, level);
-          if (persist) {
-            state.persistedVariant.set(sessionID, level);
-            state.temporaryResetVariant.delete(sessionID);
-          } else if (resetVariant && resetVariant !== level) {
-            state.temporaryResetVariant.set(sessionID, resetVariant);
-          } else {
-            state.temporaryResetVariant.delete(sessionID);
-          }
+          state.update(sessionID, (entry) => {
+            entry.currentVariant = level;
+            if (persist) {
+              entry.persistedVariant = level;
+              delete entry.temporaryResetVariant;
+            } else if (resetVariant && resetVariant !== level) {
+              entry.temporaryResetVariant = resetVariant;
+            } else {
+              delete entry.temporaryResetVariant;
+            }
+          });
 
           return `Reasoning effort set to ${level}`;
         },
@@ -214,7 +247,8 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     event: async ({ event }) => {
       if (event.type === "session.idle") {
         const sessionID = event.properties.sessionID;
-        const resetVariant = state.temporaryResetVariant.get(sessionID);
+        const sessionState = state.get(sessionID);
+        const resetVariant = sessionState?.temporaryResetVariant;
         if (!resetVariant) return;
 
         const promptResponse = await sendVariantPrompt(
@@ -233,8 +267,10 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
           return;
         }
 
-        state.currentVariant.set(sessionID, resetVariant);
-        state.temporaryResetVariant.delete(sessionID);
+        state.update(sessionID, (entry) => {
+          entry.currentVariant = resetVariant;
+          delete entry.temporaryResetVariant;
+        });
         return;
       }
     },
@@ -244,11 +280,15 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
       const variants = await resolveValidVariants(sessionID, model as Model);
       if (variants.length === 0) return;
 
-      let variant = state.currentVariant.get(sessionID) ?? state.persistedVariant.get(sessionID);
+      const sessionState = state.get(sessionID);
+      let variant = sessionState?.currentVariant ?? sessionState?.persistedVariant;
       if (!variant) {
-        variant = await resolveCurrentVariant(sessionID);
-        if (variant && variants.includes(variant)) {
-          state.currentVariant.set(sessionID, variant);
+        const resolvedVariant = await resolveCurrentVariant(sessionID);
+        if (resolvedVariant && variants.includes(resolvedVariant)) {
+          variant = resolvedVariant;
+          state.update(sessionID, (entry) => {
+            entry.currentVariant = resolvedVariant;
+          });
         }
       }
 
