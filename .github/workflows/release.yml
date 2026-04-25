@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get release pull request title
+        id: release-pr
+        run: |
+          has_changesets="$(node <<'EOF'
+          const fs = require("node:fs");
+
+          const hasChangesets = fs.existsSync(".changeset") && fs
+            .readdirSync(".changeset")
+            .some((file) => file.endsWith(".md") && file !== "README.md");
+
+          process.stdout.write(String(hasChangesets));
+          EOF
+          )"
+
+          echo "has_changesets=${has_changesets}" >> "$GITHUB_OUTPUT"
+
+          if [ "$has_changesets" != "true" ]; then
+            echo "title=Version Packages" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          pnpm exec changeset status --output=changeset-status.json
+          version="$(node -e "const status = require('./changeset-status.json'); const release = status.releases[0]; if (!release) process.exit(1); process.stdout.write(release.newVersion);")"
+          echo "title=chore(release): v${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release pull request or publish
+        uses: changesets/action@v1
+        with:
+          title: ${{ steps.release-pr.outputs.title }}
+          commit: ${{ steps.release-pr.outputs.title }}
+          version: pnpm run version-packages
+          publish: pnpm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

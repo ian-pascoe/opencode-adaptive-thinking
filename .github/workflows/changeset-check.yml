@@ -1,0 +1,66 @@
+name: Changeset Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changeset:
+    name: Changeset Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check whether changeset is required
+        id: requirement
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          node <<'EOF'
+          const fs = require("node:fs");
+
+          const title = process.env.PR_TITLE ?? "";
+          const releaseRelevantTypes = "feat|fix|perf|refactor|revert";
+          const requiresChangeset = new RegExp(`^(${releaseRelevantTypes})(\\([^)]+\\))?!?:\\s.+`).test(title) || /^[a-z]+(\([^)]+\))?!:\s.+/.test(title);
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `required=${requiresChangeset}\n`);
+
+          if (requiresChangeset) {
+            console.log(`Changeset required for release-relevant PR title: ${title}`);
+          } else {
+            console.log(`Changeset not required for PR title: ${title}`);
+          }
+          EOF
+
+      - name: Checkout
+        if: steps.requirement.outputs.required == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        if: steps.requirement.outputs.required == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
+      - name: Setup Node.js
+        if: steps.requirement.outputs.required == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.requirement.outputs.required == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for changeset
+        if: steps.requirement.outputs.required == 'true'
+        run: |
+          pnpm exec changeset status --since=origin/${{ github.base_ref }}
