@@ -1,10 +1,10 @@
 ---
-title: PR 3 Plugin Configurable Options
+createdAt: '2026-04-25T13:00:09.453Z'
+keywords: []
+related: [architecture/plugin_options/plugin_options_configurability.md, project_management/pull_requests/context.md, project_management/pull_requests/pr_3_plugin_configurable_options.abstract.md, project_management/pull_requests/pr_3_plugin_configurable_options.overview.md, project_management/pull_requests/pr_317_plugin_entry_added.md, project_management/pull_requests/contract_parity_matrix_review.md, project_management/pull_requests/pr_3_test_pruning.md, project_management/pull_requests/pr_5_default_plugin_options_follow_up.md, project_management/pull_requests/pr_6_replacement_for_default_options_changes.md, project_management/pull_requests/pr_6_merged_and_release_created.abstract.md, project_management/pull_requests/pr_6_title_change.abstract.md]
 summary: PR 3 removed the public serviceName plugin option, kept the internal log service name fixed, and added a regression test plus docs updates.
 tags: []
-related: [architecture/plugin_options/plugin_options_configurability.md, project_management/pull_requests/context.md]
-keywords: []
-createdAt: '2026-04-25T13:00:09.453Z'
+title: PR 3 Plugin Configurable Options
 updatedAt: '2026-04-25T13:05:54.310Z'
 ---
 ## Reason

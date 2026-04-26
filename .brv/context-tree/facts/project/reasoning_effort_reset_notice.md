@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort Reset Notice
+createdAt: '2026-04-25T11:44:48.223Z'
+keywords: []
+related: [facts/preference/reasoning_effort.md, facts/project/reasoning_effort_confirmation.md, facts/project/reasoning_effort_reset_message.md, facts/project/reasoning_effort_reset_notice_visibility.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_state_handling.md, facts/project/reasoning_effort_medium_handling.md]
 summary: Reasoning effort reset notice is visible and states that reasoning effort reset to medium.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T11:44:48.223Z'
+title: Reasoning Effort Reset Notice
 updatedAt: '2026-04-25T11:44:48.223Z'
 ---
 ## Reason

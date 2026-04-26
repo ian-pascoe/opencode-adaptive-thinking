@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort Reset Notice Visibility
+createdAt: '2026-04-25T11:12:05.181Z'
+keywords: []
+related: [facts/preference/reasoning_effort.md, facts/project/reasoning_effort_confirmation.md, facts/project/reasoning_effort_reset_message.md, facts/project/reasoning_effort_reset_notice.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_state_handling.md, facts/project/reasoning_effort_medium_handling.md]
 summary: The reset notice is visible as a user-level message rather than a separate tool confirmation.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T11:12:05.181Z'
+title: Reasoning Effort Reset Notice Visibility
 updatedAt: '2026-04-25T11:12:05.181Z'
 ---
 ## Reason

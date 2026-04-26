@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort State Handling
+createdAt: '2026-04-25T11:48:50.291Z'
+keywords: []
+related: [facts/preference/reasoning_effort.md, facts/project/reasoning_effort_confirmation.md, facts/project/reasoning_effort_reset_message.md, facts/project/reasoning_effort_reset_notice.md, facts/project/reasoning_effort_reset_notice_visibility.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_medium_handling.md, facts/project/bounded_session_state_lru_cache.md]
 summary: SDK types were restored in src/index.ts, the PR title was changed to conventional commit style, and verification passed.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T11:48:50.291Z'
+title: Reasoning Effort State Handling
 updatedAt: '2026-04-25T12:13:21.426Z'
 ---
 ## Reason

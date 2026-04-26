@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort
+createdAt: '2026-04-25T10:20:14.913Z'
+keywords: []
+related: [facts/project/reasoning_effort_confirmation.md, facts/project/reasoning_effort_reset_message.md, facts/project/reasoning_effort_reset_notice.md, facts/project/reasoning_effort_reset_notice_visibility.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_state_handling.md, facts/project/reasoning_effort_medium_handling.md]
 summary: Reasoning effort preference is set to low.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T10:20:14.913Z'
+title: Reasoning Effort
 updatedAt: '2026-04-25T11:55:01.662Z'
 ---
 ## Reason
