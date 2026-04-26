@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort Confirmation
+createdAt: '2026-04-25T11:06:39.753Z'
+keywords: []
+related: [facts/preference/reasoning_effort.md, facts/project/reasoning_effort_reset_message.md, facts/project/reasoning_effort_reset_notice.md, facts/project/reasoning_effort_reset_notice_visibility.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_state_handling.md, facts/project/reasoning_effort_medium_handling.md]
 summary: The only visible confirmation after the tool call was "Reasoning effort set to low".
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T11:06:39.753Z'
+title: Reasoning Effort Confirmation
 updatedAt: '2026-04-25T11:08:43.379Z'
 ---
 ## Reason

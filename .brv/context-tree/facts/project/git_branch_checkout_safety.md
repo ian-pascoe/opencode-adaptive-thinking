@@ -1,10 +1,10 @@
 ---
-title: Git branch checkout safety
+createdAt: '2026-04-25T12:25:59.254Z'
+keywords: []
+related: [facts/project/git_stash_reapply_outcome.md]
 summary: Use Git refusal as a safety signal; stash conflicting local .brv changes with a clear label before switching branches and pulling updates.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T12:25:59.254Z'
+title: Git branch checkout safety
 updatedAt: '2026-04-25T12:25:59.254Z'
 ---
 ## Reason

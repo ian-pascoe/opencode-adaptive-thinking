@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort Reset Message
+createdAt: '2026-04-25T11:08:33.219Z'
+keywords: []
+related: [facts/preference/reasoning_effort.md, facts/project/reasoning_effort_confirmation.md, facts/project/reasoning_effort_reset_notice.md, facts/project/reasoning_effort_reset_notice_visibility.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_state_handling.md, facts/project/reasoning_effort_medium_handling.md]
 summary: Reasoning effort was reset to medium, with no separate tool-generated reset confirmation observed beyond an earlier low setting message.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T11:08:33.219Z'
+title: Reasoning Effort Reset Message
 updatedAt: '2026-04-25T11:11:38.940Z'
 ---
 ## Reason

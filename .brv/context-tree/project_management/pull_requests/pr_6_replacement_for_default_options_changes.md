@@ -1,10 +1,10 @@
 ---
-title: PR 6 replacement for default-options changes
+createdAt: '2026-04-25T14:21:30.945Z'
+keywords: []
+related: [project_management/pull_requests/pr_5_default_plugin_options_follow_up.md, project_management/pull_requests/pr_6_replacement_for_default_options_changes.abstract.md, project_management/pull_requests/pr_6_replacement_for_default_options_changes.overview.md, project_management/pull_requests/context.md, project_management/pull_requests/pr_317_plugin_entry_added.md, project_management/pull_requests/contract_parity_matrix_review.md, project_management/pull_requests/pr_3_plugin_configurable_options.md, project_management/pull_requests/pr_3_test_pruning.md, project_management/pull_requests/pr_6_merged_and_release_created.abstract.md, project_management/pull_requests/pr_6_title_change.abstract.md]
 summary: 'PR #6 replaced superseded PR #5 after rebuilding default-options changes from latest main on feat/default-options-regression; verification passed and PR #5 was closed.'
 tags: []
-related: [project_management/pull_requests/pr_5_default_plugin_options_follow_up.md]
-keywords: []
-createdAt: '2026-04-25T14:21:30.945Z'
+title: PR 6 replacement for default-options changes
 updatedAt: '2026-04-25T14:21:30.945Z'
 ---
 ## Reason

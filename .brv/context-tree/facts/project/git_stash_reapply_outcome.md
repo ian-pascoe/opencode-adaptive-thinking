@@ -1,10 +1,10 @@
 ---
-title: Git Stash Reapply Outcome
+createdAt: '2026-04-25T12:27:24.819Z'
+keywords: []
+related: [facts/project/git_branch_checkout_safety.md]
 summary: Reapplying stash on main restored .brv context-tree changes without dropping the stash; reasoning-effort state handling and medium handling files were restored, while git branch checkout safety file remained present.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T12:27:24.819Z'
+title: Git Stash Reapply Outcome
 updatedAt: '2026-04-25T12:27:24.819Z'
 ---
 ## Reason

@@ -1,6 +1,7 @@
 import { tool, type Plugin } from "@opencode-ai/plugin";
 import type { Agent, Message, Model, Part, Provider } from "@opencode-ai/sdk/v2";
 import { ConfigSchema } from "./config.js";
+import type { OpencodeClient } from "@opencode-ai/sdk";
 
 const z = tool.schema;
 const serviceName = "opencode-adaptive-thinking";
@@ -41,18 +42,24 @@ class SessionStateCache {
 
 const state = new SessionStateCache(maxSessionStateSize);
 
-export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
-  type PromptAsyncOptions = Parameters<typeof client.session.promptAsync>[0];
-  type PromptAsyncBody = NonNullable<PromptAsyncOptions["body"]> & { variant: string };
+type PromptAsyncOptions = Parameters<OpencodeClient["session"]["promptAsync"]>[0];
+type PromptAsyncBody = NonNullable<PromptAsyncOptions["body"]> & { variant: string };
 
+export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
   const configParseResult = ConfigSchema.safeParse(options);
   if (!configParseResult.success) {
-    client.tui.showToast({
-      body: {
-        variant: "error",
-        message: "Invalid Adaptive Thinking plugin configuration, see logs for details",
-      },
-    });
+    const quiet =
+      typeof options === "object" && options !== null && "quiet" in options
+        ? options.quiet === true
+        : false;
+    if (!quiet) {
+      client.tui.showToast({
+        body: {
+          variant: "error",
+          message: "Invalid Adaptive Thinking plugin configuration, see logs for details",
+        },
+      });
+    }
     client.app.log({
       body: {
         service: serviceName,
@@ -166,7 +173,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
       if ("model" in message.info && message.info.model.variant) {
         return message.info.model.variant;
       }
-      agentName = message.info.agent;
+      agentName ??= message.info.agent;
     }
 
     if (!agentName) return;
@@ -281,7 +288,8 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
       if (variants.length === 0) return;
 
       const sessionState = state.get(sessionID);
-      let variant = sessionState?.currentVariant ?? sessionState?.persistedVariant;
+      const cachedVariant = sessionState?.currentVariant ?? sessionState?.persistedVariant;
+      let variant = cachedVariant && variants.includes(cachedVariant) ? cachedVariant : undefined;
       if (!variant) {
         const resolvedVariant = await resolveCurrentVariant(sessionID);
         if (resolvedVariant && variants.includes(resolvedVariant)) {

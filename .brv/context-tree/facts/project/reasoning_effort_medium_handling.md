@@ -1,10 +1,10 @@
 ---
-title: Reasoning Effort Medium Handling
+createdAt: '2026-04-25T11:56:05.207Z'
+keywords: []
+related: [facts/preference/reasoning_effort.md, facts/project/reasoning_effort_confirmation.md, facts/project/reasoning_effort_reset_message.md, facts/project/reasoning_effort_reset_notice.md, facts/project/reasoning_effort_reset_notice_visibility.md, facts/project/reasoning_effort_reset_behavior.md, facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_state_handling.md, facts/project/pr_push_outcome.md]
 summary: Reasoning effort was set to medium, a patch changeset was added for opencode-adaptive-thinking, and formatting, lint, test, and typecheck all passed before committing and pushing only the changeset.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T11:56:05.207Z'
+title: Reasoning Effort Medium Handling
 updatedAt: '2026-04-25T12:17:35.362Z'
 ---
 ## Reason

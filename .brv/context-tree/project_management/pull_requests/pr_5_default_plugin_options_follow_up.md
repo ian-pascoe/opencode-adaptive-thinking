@@ -1,10 +1,10 @@
 ---
-title: PR 5 Default Plugin Options Follow-up
+createdAt: '2026-04-25T14:19:09.928Z'
+keywords: []
+related: [project_management/pull_requests/pr_3_plugin_configurable_options.md, project_management/pull_requests/pr_3_test_pruning.md, project_management/pull_requests/pr_5_default_plugin_options_follow_up.abstract.md, project_management/pull_requests/pr_5_default_plugin_options_follow_up.overview.md, project_management/pull_requests/context.md, project_management/pull_requests/pr_317_plugin_entry_added.md, project_management/pull_requests/contract_parity_matrix_review.md, project_management/pull_requests/pr_6_replacement_for_default_options_changes.md, project_management/pull_requests/pr_6_merged_and_release_created.abstract.md, project_management/pull_requests/pr_6_title_change.abstract.md]
 summary: 'PR #5 was opened from latest main to preserve default plugin options behavior when no options are provided; verification passed on test, typecheck, lint, format:check, and build.'
 tags: []
-related: [project_management/pull_requests/pr_3_plugin_configurable_options.md, project_management/pull_requests/pr_3_test_pruning.md]
-keywords: []
-createdAt: '2026-04-25T14:19:09.928Z'
+title: PR 5 Default Plugin Options Follow-up
 updatedAt: '2026-04-25T14:19:09.928Z'
 ---
 ## Reason

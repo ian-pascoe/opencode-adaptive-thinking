@@ -1,10 +1,10 @@
 ---
-title: PR Push Outcome
+createdAt: '2026-04-25T13:12:20.630Z'
+keywords: []
+related: [facts/project/reasoning_effort_medium_handling.md]
 summary: The remaining .brv memory was committed as 7edf357 and pushed; the PR branch is clean and up to date with origin/feat/configurable-plugin-options.
 tags: []
-related: []
-keywords: []
-createdAt: '2026-04-25T13:12:20.630Z'
+title: PR Push Outcome
 updatedAt: '2026-04-25T13:12:20.630Z'
 ---
 ## Reason

@@ -1,18 +1,18 @@
 ---
 title: Plugin Options Configurability
-summary: AdaptiveThinkingPlugin now supports configurable enabled/quiet flags, service and tool naming, custom tool descriptions and system prompts, with invalid config logging and disabled-plugin no-op behavior.
+summary: Plugin options now support enabled, quiet, toolName, toolDescription, and systemPrompt; serviceName is removed from public config and defaults remain functional.
 tags: []
-related: [facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_confirmation.md]
+related: [facts/project/reasoning_effort_behavior.md, facts/project/reasoning_effort_confirmation.md, project_management/pull_requests/pr_6_replacement_for_default_options_changes.md]
 keywords: []
 createdAt: '2026-04-25T12:40:26.166Z'
-updatedAt: '2026-04-25T12:49:59.689Z'
+updatedAt: '2026-04-25T17:44:35.947Z'
 ---
 ## Reason
-Document configurable plugin options and validation behavior for the adaptive thinking plugin
+Capture the plugin configuration surface and defaults.
 
 ## Raw Concept
 **Task:**
-Document the configurable plugin options added to AdaptiveThinkingPlugin.
+Document plugin configuration support and default behavior
 
 **Changes:**
 - Identified that the current plugin behavior is hard-coded in src/index.ts
@@ -27,6 +27,9 @@ Document the configurable plugin options added to AdaptiveThinkingPlugin.
 - Added tests for config behavior
 - Updated README with config docs and example
 - Added a minor changeset
+- Added plugin config support for enabled, quiet, toolName, toolDescription, and systemPrompt
+- Removed serviceName from public config
+- Kept internal log service fixed as opencode-adaptive-thinking
 
 **Files:**
 - src/index.ts
@@ -37,21 +40,21 @@ Document the configurable plugin options added to AdaptiveThinkingPlugin.
 - .changeset/configurable-plugin-options.md
 
 **Flow:**
-load config -> validate with Zod -> if invalid log and toast -> if disabled return {} -> otherwise expose configured tool and guidance
+plugin loads config -> validates with Zod -> applies defaults -> runs with optional overrides
 
 **Timestamp:** 2026-04-25
 
-**Author:** Ian
+**Author:** assistant
 
 ## Narrative
 ### Structure
-The implementation centralizes plugin configuration in src/config.ts and threads the validated options into AdaptiveThinkingPlugin so runtime behavior and exposed tool metadata can be customized.
+Configuration is defined in src/config.ts, consumed by src/index.ts, and documented in README.md. Tests cover disabled plugin behavior, invalid config handling, custom tool metadata, custom system prompt, and default-options regression.
 
 ### Dependencies
-Depends on the existing opencode-byterover config pattern, Zod validation, and the plugin runtime that shows toasts and logs errors on invalid configuration.
+Uses Zod for schema validation and relies on high-signal tests to protect the public config surface.
 
 ### Highlights
-Tests, typecheck, lint, format check, and build all passed after the implementation. Validation only found formatting drift in src/index.test.ts before formatting was applied.
+The config surface is intentionally kept small and does not expose serviceName. Default behavior is treated as a regression requirement.
 
 ### Rules
 Curate only information with lasting value: facts, decisions, technical details, preferences, or notable outcomes.
@@ -60,8 +63,7 @@ Curate only information with lasting value: facts, decisions, technical details,
 Example options include enabled, quiet, serviceName, toolName, toolDescription, and systemPrompt.
 
 ## Facts
-- **config_pattern**: The plugin uses the opencode-byterover config pattern. [project]
-- **plugin_options**: Supported options are enabled, quiet, serviceName, toolName, toolDescription, and systemPrompt. [project]
-- **invalid_config_behavior**: Invalid config logs an error, shows a toast, and returns {}. [project]
-- **disabled_plugin_behavior**: Disabled plugin returns {}. [project]
-- **tool_name_behavior**: Custom toolName updates both the exposed tool and the system prompt guidance. [project]
+- **plugin_options**: The plugin supports configurable enabled, quiet, toolName, toolDescription, and systemPrompt options. [project]
+- **service_name_config**: serviceName was removed from the public config surface. [project]
+- **internal_log_service_name**: The internal log service name remains opencode-adaptive-thinking. [project]
+- **default_options_behavior**: Default plugin behavior must continue working when no options are provided. [project]

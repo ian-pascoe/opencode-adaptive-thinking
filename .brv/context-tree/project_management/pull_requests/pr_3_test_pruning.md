@@ -1,10 +1,10 @@
 ---
-title: PR 3 Test Pruning
+createdAt: '2026-04-25T13:08:52.626Z'
+keywords: []
+related: [project_management/pull_requests/context.md, src/index.test.ts.md, project_management/pull_requests/pr_3_test_pruning.abstract.md, project_management/pull_requests/pr_3_test_pruning.overview.md, project_management/pull_requests/pr_317_plugin_entry_added.md, project_management/pull_requests/contract_parity_matrix_review.md, project_management/pull_requests/pr_3_plugin_configurable_options.md, project_management/pull_requests/pr_5_default_plugin_options_follow_up.md, project_management/pull_requests/pr_6_replacement_for_default_options_changes.md, project_management/pull_requests/pr_6_merged_and_release_created.abstract.md, project_management/pull_requests/pr_6_title_change.abstract.md]
 summary: PR 3 removed two low-signal system-transform smoke tests, kept behavior-focused coverage, and passed validation checks.
 tags: []
-related: [project_management/pull_requests/context.md, src/index.test.ts.md]
-keywords: []
-createdAt: '2026-04-25T13:08:52.626Z'
+title: PR 3 Test Pruning
 updatedAt: '2026-04-25T13:08:52.626Z'
 ---
 ## Reason
