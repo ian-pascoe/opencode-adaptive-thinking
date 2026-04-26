@@ -1,5 +1,11 @@
 # opencode-adaptive-thinking
 
+## 0.1.2
+
+### Patch Changes
+
+- [#8](https://github.com/ian-pascoe/opencode-adaptive-thinking/pull/8) [`0afb0c6`](https://github.com/ian-pascoe/opencode-adaptive-thinking/commit/0afb0c6df61980588ef072a756412b7a66d16772) Thanks [@ian-pascoe](https://github.com/ian-pascoe)! - Honor quiet invalid-config handling, ignore stale cached reasoning effort after model changes, and resolve fallback agent variants from the newest relevant message.
+
 ## 0.1.1
 
 ### Patch Changes
