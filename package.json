@@ -30,27 +30,29 @@
     "format:check": "oxfmt --check",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "prepare": "husky",
     "release": "pnpm run build && changeset publish",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "version-packages": "changeset version",
-    "prepare": "husky"
+    "typecheck": "tsgo --noEmit",
+    "verify": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build",
+    "version-packages": "changeset version"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.14.24",
-    "@opencode-ai/sdk": "^1.14.24",
-    "zod": "^4.3.6"
+    "@opencode-ai/plugin": "^1.15.10",
+    "@opencode-ai/sdk": "^1.15.10",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.1",
+    "@typescript/native-preview": "7.0.0-dev.20260526.1",
     "husky": "^9.1.7",
-    "oxfmt": "^0.46.0",
-    "oxlint": "^1.61.0",
-    "rolldown": "1.0.0-rc.17",
+    "oxfmt": "^0.52.0",
+    "oxlint": "^1.67.0",
+    "rolldown": "1.0.2",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.7"
   },
   "packageManager": "pnpm@10.33.2"
 }
