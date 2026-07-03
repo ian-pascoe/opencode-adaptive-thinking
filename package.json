@@ -38,21 +38,23 @@
     "version-packages": "changeset version"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.15.10",
-    "@opencode-ai/sdk": "^1.15.10",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.0",
-    "@types/node": "^25.9.1",
-    "@typescript/native-preview": "7.0.0-dev.20260526.1",
+    "@types/node": "^26.1.0",
+    "@typescript/native-preview": "7.0.0-dev.20260703.1",
     "husky": "^9.1.7",
-    "oxfmt": "^0.52.0",
-    "oxlint": "^1.67.0",
-    "rolldown": "1.0.2",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
+    "rolldown": "1.1.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.9"
   },
-  "packageManager": "pnpm@10.33.2"
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1",
+    "@opencode-ai/sdk": ">=1"
+  },
+  "packageManager": "pnpm@11.8.0"
 }
