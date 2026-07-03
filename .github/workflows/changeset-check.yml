@@ -46,8 +46,6 @@ jobs:
       - name: Setup pnpm
         if: steps.requirement.outputs.required == 'true'
         uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.2
 
       - name: Setup Node.js
         if: steps.requirement.outputs.required == 'true'
