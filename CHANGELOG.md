@@ -1,5 +1,11 @@
 # opencode-adaptive-thinking
 
+## 0.1.4
+
+### Patch Changes
+
+- [#13](https://github.com/ian-pascoe/opencode-adaptive-thinking/pull/13) [`08757ee`](https://github.com/ian-pascoe/opencode-adaptive-thinking/commit/08757ee3df6954758243f2a44f7887b40d5f640e) Thanks [@ian-pascoe](https://github.com/ian-pascoe)! - Bump dependencies
+
 ## 0.1.3
 
 ### Patch Changes
