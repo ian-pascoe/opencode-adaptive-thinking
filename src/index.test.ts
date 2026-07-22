@@ -117,6 +117,21 @@ describe("AdaptiveThinkingPlugin", () => {
     expect(system[0]).toContain("set_reasoning_effort");
   });
 
+  test("preserves the calling agent when setting reasoning effort", async () => {
+    const sessionID = "preserve-agent";
+    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
+    toolContext.agent = "custom-worker";
+    const plugin = await AdaptiveThinkingPlugin({ client } as never);
+
+    await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
+
+    expect(client.session.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({ agent: "custom-worker", variant: "high" }),
+      }),
+    );
+  });
+
   test("returns no hooks when disabled", async () => {
     const { client } = createClient("disabled-plugin");
     const plugin = await AdaptiveThinkingPlugin({ client } as never, { enabled: false });
@@ -298,6 +313,7 @@ describe("AdaptiveThinkingPlugin", () => {
     const secondPrompt = promptCalls[1]?.[0];
     expect(secondPrompt).toMatchObject({
       body: {
+        agent: "agent",
         variant: "medium",
         parts: [{ ignored: true, synthetic: true }],
       },

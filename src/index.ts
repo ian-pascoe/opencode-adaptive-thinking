@@ -11,6 +11,7 @@ type SessionState = {
   currentVariant?: string;
   persistedVariant?: string;
   temporaryResetVariant?: string;
+  temporaryResetAgent?: string;
 };
 
 class SessionStateCache {
@@ -83,6 +84,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     sessionID: string,
     variant: string,
     text: string,
+    agent: string,
     ignored = true,
   ) => {
     const body: PromptAsyncBody = {
@@ -95,6 +97,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
           ignored,
         },
       ],
+      agent,
       variant,
     };
 
@@ -212,7 +215,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
               "Whether to persist the setting for this session, otherwise it will only apply for the remainder of the current turn",
             ),
         },
-        execute: async ({ level, persist }, { sessionID }) => {
+        execute: async ({ level, persist }, { sessionID, agent }) => {
           const validVariants = await resolveValidVariants(sessionID);
           if (validVariants.length === 0) {
             return "Failed to set reasoning effort: no valid reasoning effort levels are available for this session";
@@ -230,6 +233,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
             sessionID,
             level,
             `Reasoning effort set to ${level}`,
+            agent,
           );
           if (promptResponse.error) {
             return `Failed to set reasoning effort: ${JSON.stringify(promptResponse.error.data)}`;
@@ -240,10 +244,13 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
             if (persist) {
               entry.persistedVariant = level;
               delete entry.temporaryResetVariant;
+              delete entry.temporaryResetAgent;
             } else if (resetVariant && resetVariant !== level) {
               entry.temporaryResetVariant = resetVariant;
+              entry.temporaryResetAgent = agent;
             } else {
               delete entry.temporaryResetVariant;
+              delete entry.temporaryResetAgent;
             }
           });
 
@@ -256,12 +263,14 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
         const sessionID = event.properties.sessionID;
         const sessionState = state.get(sessionID);
         const resetVariant = sessionState?.temporaryResetVariant;
-        if (!resetVariant) return;
+        const resetAgent = sessionState?.temporaryResetAgent;
+        if (!resetVariant || !resetAgent) return;
 
         const promptResponse = await sendVariantPrompt(
           sessionID,
           resetVariant,
           `Reasoning effort reset to ${resetVariant}.`,
+          resetAgent,
         );
         if (promptResponse.error) {
           client.app.log({
@@ -277,6 +286,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
         state.update(sessionID, (entry) => {
           entry.currentVariant = resetVariant;
           delete entry.temporaryResetVariant;
+          delete entry.temporaryResetAgent;
         });
         return;
       }
