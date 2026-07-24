@@ -1,5 +1,11 @@
 # opencode-adaptive-thinking
 
+## 0.1.5
+
+### Patch Changes
+
+- [#16](https://github.com/ian-pascoe/opencode-adaptive-thinking/pull/16) [`f4c5e6a`](https://github.com/ian-pascoe/opencode-adaptive-thinking/commit/f4c5e6af7695fd51c54a5b4eb7253c1d42f965b2) Thanks [@mauriciozaffari](https://github.com/mauriciozaffari)! - Preserve the active agent when synthetic prompts adjust reasoning effort and when temporary overrides reset after a session becomes idle. This prevents OpenCode from routing follow-up work to the default agent instead of the agent that initiated the change.
+
 ## 0.1.4
 
 ### Patch Changes
