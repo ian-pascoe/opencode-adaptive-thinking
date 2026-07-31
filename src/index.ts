@@ -12,6 +12,7 @@ type SessionState = {
   persistedVariant?: string;
   temporaryResetVariant?: string;
   temporaryResetAgent?: string;
+  temporaryResetModel?: { providerID: string; modelID: string };
 };
 
 class SessionStateCache {
@@ -45,6 +46,7 @@ const state = new SessionStateCache(maxSessionStateSize);
 
 type PromptAsyncOptions = Parameters<OpencodeClient["session"]["promptAsync"]>[0];
 type PromptAsyncBody = NonNullable<PromptAsyncOptions["body"]> & { variant: string };
+type ModelInfo = { providerID: string; modelID: string };
 
 export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
   const configParseResult = ConfigSchema.safeParse(options);
@@ -85,6 +87,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     variant: string,
     text: string,
     agent: string,
+    model?: ModelInfo,
     ignored = true,
   ) => {
     const body: PromptAsyncBody = {
@@ -100,6 +103,10 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
       agent,
       variant,
     };
+
+    if (model) {
+      body.model = model;
+    }
 
     return client.session.promptAsync({
       path: { id: sessionID },
@@ -124,16 +131,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
       });
       return [];
     }
-    let modelInfo: { providerID: string; modelID: string } | undefined;
-    const messages = messagesResponse.data as Array<{ info: Message; parts: Array<Part> }>;
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message = messages[i]!;
-      if ("model" in message.info) {
-        modelInfo = message.info.model;
-        break;
-      }
-    }
-
+    const modelInfo = resolveLatestModelInfo(messagesResponse.data);
     if (!modelInfo) return [];
 
     const providers = await client.provider.list();
@@ -153,6 +151,22 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
     if (!provider) return [];
 
     return getModelVariants(provider.models[modelInfo.modelID] as Model | undefined);
+  };
+
+  const resolveLatestModelInfo = (
+    data: unknown,
+  ): { providerID: string; modelID: string } | undefined => {
+    const messages = data as Array<{ info: Message; parts: Array<Part> }>;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i]!;
+      if ("model" in message.info) {
+        const { providerID, modelID } = message.info.model;
+        if (providerID && modelID) {
+          return { providerID, modelID };
+        }
+      }
+    }
+    return;
   };
 
   const resolveCurrentVariant = async (sessionID: string): Promise<string | undefined> => {
@@ -228,12 +242,16 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
           const resetVariant = persist
             ? undefined
             : (sessionState?.persistedVariant ?? (await resolveCurrentVariant(sessionID)));
+          const currentModel = resolveLatestModelInfo(
+            (await client.session.messages({ path: { id: sessionID } })).data,
+          );
 
           const promptResponse = await sendVariantPrompt(
             sessionID,
             level,
             `Reasoning effort set to ${level}`,
             agent,
+            currentModel,
           );
           if (promptResponse.error) {
             return `Failed to set reasoning effort: ${JSON.stringify(promptResponse.error.data)}`;
@@ -245,12 +263,19 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
               entry.persistedVariant = level;
               delete entry.temporaryResetVariant;
               delete entry.temporaryResetAgent;
+              delete entry.temporaryResetModel;
             } else if (resetVariant && resetVariant !== level) {
               entry.temporaryResetVariant = resetVariant;
               entry.temporaryResetAgent = agent;
+              if (currentModel) {
+                entry.temporaryResetModel = currentModel;
+              } else {
+                delete entry.temporaryResetModel;
+              }
             } else {
               delete entry.temporaryResetVariant;
               delete entry.temporaryResetAgent;
+              delete entry.temporaryResetModel;
             }
           });
 
@@ -264,6 +289,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
         const sessionState = state.get(sessionID);
         const resetVariant = sessionState?.temporaryResetVariant;
         const resetAgent = sessionState?.temporaryResetAgent;
+        const resetModel = sessionState?.temporaryResetModel;
         if (!resetVariant || !resetAgent) return;
 
         const promptResponse = await sendVariantPrompt(
@@ -271,6 +297,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
           resetVariant,
           `Reasoning effort reset to ${resetVariant}.`,
           resetAgent,
+          resetModel,
         );
         if (promptResponse.error) {
           client.app.log({
@@ -287,6 +314,7 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
           entry.currentVariant = resetVariant;
           delete entry.temporaryResetVariant;
           delete entry.temporaryResetAgent;
+          delete entry.temporaryResetModel;
         });
         return;
       }
