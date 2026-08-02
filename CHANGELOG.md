@@ -1,5 +1,11 @@
 # opencode-adaptive-thinking
 
+## 0.1.6
+
+### Patch Changes
+
+- [#18](https://github.com/ian-pascoe/opencode-adaptive-thinking/pull/18) [`defb743`](https://github.com/ian-pascoe/opencode-adaptive-thinking/commit/defb7432816a8d25e4610d73121e558ad8d4eece) Thanks [@mauriciozaffari](https://github.com/mauriciozaffari)! - Preserve the active model when synthetic prompts adjust reasoning effort and when temporary overrides reset after a session becomes idle. This prevents OpenCode from falling back to the agent/provider default model instead of the model that was selected when the reasoning change was initiated.
+
 ## 0.1.5
 
 ### Patch Changes
