@@ -117,8 +117,8 @@ describe("AdaptiveThinkingPlugin", () => {
     expect(system[0]).toContain("set_reasoning_effort");
   });
 
-  test("preserves the calling agent when setting reasoning effort", async () => {
-    const sessionID = "preserve-agent";
+  test("preserves the calling agent and model when setting reasoning effort", async () => {
+    const sessionID = "preserve-agent-model";
     const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
     toolContext.agent = "custom-worker";
     const plugin = await AdaptiveThinkingPlugin({ client } as never);
@@ -127,7 +127,11 @@ describe("AdaptiveThinkingPlugin", () => {
 
     expect(client.session.promptAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        body: expect.objectContaining({ agent: "custom-worker", variant: "high" }),
+        body: expect.objectContaining({
+          agent: "custom-worker",
+          model: { providerID: "provider", modelID: "model" },
+          variant: "high",
+        }),
       }),
     );
   });
@@ -314,6 +318,7 @@ describe("AdaptiveThinkingPlugin", () => {
     expect(secondPrompt).toMatchObject({
       body: {
         agent: "agent",
+        model: { providerID: "provider", modelID: "model" },
         variant: "medium",
         parts: [{ ignored: true, synthetic: true }],
       },
