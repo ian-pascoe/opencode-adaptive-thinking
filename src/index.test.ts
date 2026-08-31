@@ -415,4 +415,77 @@ describe("AdaptiveThinkingPlugin", () => {
       }),
     });
   });
+
+  test("merges adaptive guidance into an existing system prompt", async () => {
+    const sessionID = "merge-existing-system-prompt";
+    const { client } = createClient(sessionID, [createMessage("medium")]);
+    const plugin = await AdaptiveThinkingPlugin({ client } as never);
+    const existing = "You are a helpful coding assistant.";
+    const system: string[] = [existing];
+
+    await plugin["experimental.chat.system.transform"]!(
+      {
+        sessionID,
+        model: { variants },
+      } as never,
+      { system },
+    );
+
+    expect(system).toHaveLength(1);
+    expect(system[0]).toContain(existing);
+    expect(system[0]).toContain(`${existing}\n\n`);
+    expect(system[0]).toContain("You MUST manage reasoning effort actively");
+    expect(system[0]).toContain("set_reasoning_effort");
+  });
+
+  test("injects adaptive guidance when no system prompt exists", async () => {
+    const sessionID = "inject-empty-system-prompt";
+    const { client } = createClient(sessionID, [createMessage("medium")]);
+    const plugin = await AdaptiveThinkingPlugin({ client } as never);
+    const system: string[] = [];
+
+    await plugin["experimental.chat.system.transform"]!(
+      {
+        sessionID,
+        model: { variants },
+      } as never,
+      { system },
+    );
+
+    expect(system).toHaveLength(1);
+    expect(system[0]).toContain("You MUST manage reasoning effort actively");
+    expect(system[0]).toContain("set_reasoning_effort");
+  });
+
+  test("preserves variant details and tool name when merging into an existing prompt", async () => {
+    const sessionID = "merge-variant-details";
+    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
+    const plugin = await AdaptiveThinkingPlugin({ client } as never, {
+      toolName: "adjust_reasoning",
+    });
+    const existing = "Base system instructions.";
+    const system: string[] = [existing];
+
+    await setReasoningEffort(
+      plugin,
+      { level: "high", persist: true },
+      toolContext,
+      "adjust_reasoning",
+    );
+    await plugin["experimental.chat.system.transform"]!(
+      {
+        sessionID,
+        model: { variants },
+      } as never,
+      { system },
+    );
+
+    expect(system).toHaveLength(1);
+    expect(system[0]).toContain(existing);
+    expect(system[0]).toContain("Current reasoning effort level: high.");
+    expect(system[0]).toContain(
+      "Valid reasoning effort levels for this session: none, low, medium, high, xhigh.",
+    );
+    expect(system[0]).toContain("adjust_reasoning");
+  });
 });

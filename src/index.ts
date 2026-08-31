@@ -338,14 +338,25 @@ export const AdaptiveThinkingPlugin: Plugin = async ({ client }, options) => {
         }
       }
 
-      system.push(
+      const adaptivePrompt =
         config.systemPrompt.trim() +
-          " " +
-          (variant ? `Current reasoning effort level: ${variant}. ` : "") +
-          `Valid reasoning effort levels for this session: ${variants.join(", ")}. ` +
-          `To change your reasoning effort, use the \`${config.toolName}\` tool with one of the valid levels. ` +
-          "Only call it when the task complexity justifies changing levels.",
-      );
+        " " +
+        (variant ? `Current reasoning effort level: ${variant}. ` : "") +
+        `Valid reasoning effort levels for this session: ${variants.join(", ")}. ` +
+        `To change your reasoning effort, use the \`${config.toolName}\` tool with one of the valid levels. ` +
+        "Only call it when the task complexity justifies changing levels.";
+
+      // Some chat templates (e.g. strict Jinja templates) require exactly one
+      // system message at the very beginning of the conversation and reject any
+      // system message that appears later. Merge the adaptive-thinking guidance
+      // into the existing first system prompt instead of pushing a second one;
+      // only inject a standalone entry when no system prompt exists yet.
+      const existingSystemPrompt = system[0];
+      if (existingSystemPrompt === undefined) {
+        system.push(adaptivePrompt);
+      } else {
+        system[0] = `${existingSystemPrompt}\n\n${adaptivePrompt}`;
+      }
     },
   };
 };
