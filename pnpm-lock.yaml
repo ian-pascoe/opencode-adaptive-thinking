@@ -14,9 +14,6 @@ importers:
       '@opencode-ai/sdk':
         specifier: '>=1'
         version: 1.17.13
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       '@changesets/changelog-github':
         specifier: ^0.7.0
@@ -1318,9 +1315,6 @@ packages:
   zod@4.1.8:
     resolution: {integrity: sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ==}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
-
 snapshots:
 
   '@ai-sdk/provider@3.0.8':
@@ -2379,5 +2373,3 @@ snapshots:
   yaml@2.9.0: {}
 
   zod@4.1.8: {}
-
-  zod@4.4.3: {}

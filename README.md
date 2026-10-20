@@ -41,6 +41,34 @@ The plugin accepts these optional settings:
 - `toolName`: name of the reasoning-effort tool exposed to agents. Defaults to `set_reasoning_effort`.
 - `toolDescription`: description for the reasoning-effort tool. Defaults to `Set your reasoning effort`.
 - `systemPrompt`: custom adaptive-thinking guidance injected into the system prompt.
+- `triggers` (optional): when to inject the guidance and run the classifier. Fields: `afterIdle` and `afterUserMessage` (booleans). Omit `triggers` for the original behavior (guidance on every request); both `false` disables the guidance.
+- `classifier` (optional): an LLM classifier that chooses the effort on real user messages. Disabled by default. Fields: `enabled` (boolean) and `model` (`{ providerID, modelID }`, default `opencode/big-pickle`).
+
+### Triggers and classifier
+
+`triggers` scopes when the guidance is injected:
+
+- `afterIdle`: first request after an idle or session start, when no user message is pending.
+- `afterUserMessage`: first request after a real user message.
+
+Both are reset on `session.idle`. Omit `triggers` for the original behavior (guidance on every request). Both `false` disables the guidance.
+
+When `classifier.enabled` is true, the plugin asks the configured model for one valid effort level on real user messages. It uses the same guidance as its system prompt, then the last compaction summary (assistant message with `summary: true`) or the messages since session start/last idle, then the current message last. The call uses a temporary child session with tools disabled and a 5 s timeout; failures leave the level unchanged. The main session still receives the guidance at the triggers.
+
+```json
+"triggers": {
+  "afterIdle": true,
+  "afterUserMessage": true
+},
+"classifier": {
+  "enabled": true,
+  "model": { "providerID": "opencode", "modelID": "big-pickle" }
+}
+```
+
+Synthetic and ignored messages are skipped. The classifier sends the user's request text and session context to the configured model; keep it disabled if that is not acceptable.
+
+Session state is kept in a 5,000-entry LRU and expires after seven days of inactivity; deleted sessions are removed.
 
 ### Example
 
@@ -88,6 +116,8 @@ Example persisted change:
 ```
 
 The system prompt lists the valid levels for the current session. Cached session state is only used when it is still valid for the current model, so switching models will not advertise or reuse an invalid effort level.
+
+Adaptive-thinking guidance is merged into the first existing system prompt instead of a separate system message, so strict chat templates that allow only one system message keep working.
 
 ## Troubleshooting
 
