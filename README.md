@@ -89,6 +89,8 @@ Example persisted change:
 
 The system prompt lists the valid levels for the current session. Cached session state is only used when it is still valid for the current model, so switching models will not advertise or reuse an invalid effort level.
 
+Adaptive-thinking guidance is merged into the first existing system prompt instead of a separate system message, so strict chat templates that allow only one system message keep working.
+
 ## Troubleshooting
 
 If the tool returns `no valid reasoning effort levels are available for this session`, check that the active model exposes variants in OpenCode. Some providers or models may not support reasoning-effort levels.

@@ -1,418 +1,304 @@
 import { describe, expect, test, vi } from "vitest";
 import { AdaptiveThinkingPlugin } from "./index";
 
-const variants = {
-  none: {},
-  low: {},
-  medium: {},
-  high: {},
-  xhigh: {},
-};
+const variants = { none: {}, low: {}, medium: {}, high: {}, xhigh: {} };
 
-const createClient = (sessionID: string, messages: Array<unknown> = []) => {
-  const promptAsync = vi.fn(async () => ({ error: undefined }));
-
-  return {
-    client: {
-      session: {
-        messages: vi.fn(async () => ({ data: messages, error: undefined })),
-        promptAsync,
-      },
-      provider: {
-        list: vi.fn(async () => ({
-          data: {
-            all: [
-              {
-                id: "provider",
-                models: {
-                  model: { variants },
-                },
-              },
-            ],
-          },
-          error: undefined,
-        })),
-      },
-      app: {
-        agents: vi.fn(async () => ({ data: [], error: undefined })),
-        log: vi.fn(),
-      },
-      tui: {
-        showToast: vi.fn(),
-      },
-    },
-    toolContext: {
-      sessionID,
-      messageID: "message",
-      agent: "agent",
-      directory: "/tmp",
-      worktree: "/tmp",
-      abort: new AbortController().signal,
-      metadata: vi.fn(),
-      ask: vi.fn(),
-    },
-  };
-};
-
-const createMessage = (variant = "medium") => ({
+const message = (variant?: string, agent = "agent") => ({
   info: {
-    id: "message",
-    role: "user",
-    agent: "agent",
-    model: {
-      providerID: "provider",
-      modelID: "model",
-      variant,
-    },
-  },
-  parts: [],
-});
-
-const createAgentMessage = (agent: string) => ({
-  info: {
-    id: `message-${agent}`,
     role: "user",
     agent,
+    model: { providerID: "provider", modelID: "model", ...(variant ? { variant } : {}) },
   },
   parts: [],
 });
 
-const setReasoningEffort = async (
-  plugin: Awaited<ReturnType<typeof AdaptiveThinkingPlugin>>,
-  args: { level: string; persist: boolean },
-  context: unknown,
-  toolName = "set_reasoning_effort",
-) => plugin.tool![toolName]!.execute(args, context as never);
+const assistant = (variant?: string) => ({
+  info: {
+    role: "assistant",
+    agent: "agent",
+    providerID: "provider",
+    modelID: "model",
+    ...(variant ? { variant } : {}),
+  },
+  parts: [],
+});
 
-const touchTemporarySession = async (sessionID: string) => {
-  const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-  const plugin = await AdaptiveThinkingPlugin({ client } as never);
-
-  await setReasoningEffort(plugin, { level: "low", persist: false }, toolContext);
-
-  return { client, plugin };
+const createClient = (
+  messages: Array<any> = [],
+  modelVariants: Record<string, object> = variants,
+  agents: Record<string, string> = {},
+) => {
+  const prompts: Array<any> = [];
+  const client = {
+    session: {
+      messages: vi.fn(async () => ({ data: messages, error: undefined })),
+      promptAsync: vi.fn(async ({ body }: any) => {
+        prompts.push(body);
+        messages.push(message(body.variant));
+        return { error: undefined };
+      }),
+    },
+    provider: {
+      list: vi.fn(async () => ({
+        data: {
+          all: [{ id: "provider", models: { model: { variants: modelVariants } } }],
+        },
+        error: undefined,
+      })),
+    },
+    app: {
+      agents: vi.fn(async () => ({
+        data: Object.entries(agents).map(([name, variant]) => ({ name, variant })),
+        error: undefined,
+      })),
+      log: vi.fn(),
+    },
+    tui: { showToast: vi.fn() },
+  };
+  return { client, prompts };
 };
 
+const ctx = (sessionID: string, agent = "agent") => ({ sessionID, agent });
+
+const set = (plugin: any, level: string, persist: boolean, sessionID: string) =>
+  plugin.tool.set_reasoning_effort.execute({ level, persist }, ctx(sessionID));
+
+const idle = (plugin: any, sessionID: string) =>
+  plugin.event({ event: { type: "session.idle", properties: { sessionID } } });
+
+const transform = (
+  plugin: any,
+  sessionID: string,
+  system: Array<string>,
+  model: any = { variants },
+) => plugin["experimental.chat.system.transform"]({ sessionID, model }, { system });
+
 describe("AdaptiveThinkingPlugin", () => {
-  test("uses defaults when no options are provided", async () => {
-    const sessionID = "default-options";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-    const system: string[] = [];
+  test("applies defaults, persists a level and preserves agent and model", async () => {
+    const { client, prompts } = createClient([message("medium")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
 
-    await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
-    await plugin["experimental.chat.system.transform"]!(
-      {
-        sessionID,
-        model: { variants },
-      } as never,
-      { system },
-    );
+    expect(plugin.tool.set_reasoning_effort.description).toBe("Set your reasoning effort");
+    expect(await set(plugin, "high", true, "defaults")).toBe("Reasoning effort set to high");
+    expect(prompts[0]).toMatchObject({
+      agent: "agent",
+      variant: "high",
+      model: { providerID: "provider", modelID: "model" },
+    });
 
-    expect(plugin.tool?.set_reasoning_effort?.description).toBe("Set your reasoning effort");
-    expect(client.session.promptAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ body: expect.objectContaining({ variant: "high" }) }),
-    );
+    const system: Array<string> = [];
+    await transform(plugin, "defaults", system);
     expect(system[0]).toContain("You MUST manage reasoning effort actively");
+    expect(system[0]).toContain("Current reasoning effort level: high.");
+    expect(system[0]).toContain(
+      "Valid reasoning effort levels for this session: none, low, medium, high, xhigh.",
+    );
     expect(system[0]).toContain("set_reasoning_effort");
   });
 
-  test("preserves the calling agent and model when setting reasoning effort", async () => {
-    const sessionID = "preserve-agent-model";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    toolContext.agent = "custom-worker";
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
+  test("honors custom configuration and merges into an existing system prompt", async () => {
+    const { client } = createClient([message("medium")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never, {
+      toolName: "adjust_reasoning",
+      toolDescription: "Adjust it",
+      systemPrompt: "Prefer cheap.",
+    });
 
-    await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
+    expect(plugin.tool.adjust_reasoning.description).toBe("Adjust it");
+    expect(plugin.tool.set_reasoning_effort).toBeUndefined();
 
-    expect(client.session.promptAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        body: expect.objectContaining({
-          agent: "custom-worker",
-          model: { providerID: "provider", modelID: "model" },
-          variant: "high",
-        }),
-      }),
-    );
+    const system = ["Base prompt."];
+    await transform(plugin, "custom", system);
+    expect(system).toHaveLength(1);
+    expect(system[0]?.startsWith("Base prompt.\n\nPrefer cheap.")).toBe(true);
+    expect(system[0]).not.toContain("You MUST manage");
+    expect(system[0]).toContain("adjust_reasoning");
   });
 
   test("returns no hooks when disabled", async () => {
-    const { client } = createClient("disabled-plugin");
-    const plugin = await AdaptiveThinkingPlugin({ client } as never, { enabled: false });
-
-    expect(plugin).toEqual({});
+    const { client } = createClient();
+    expect(await AdaptiveThinkingPlugin({ client } as never, { enabled: false })).toEqual({});
   });
 
-  test("logs configuration errors without creating hooks", async () => {
-    const { client } = createClient("invalid-config");
-    const plugin = await AdaptiveThinkingPlugin({ client } as never, { enabled: "yes" });
-
-    expect(plugin).toEqual({});
-    expect(client.tui.showToast).toHaveBeenCalledWith({
+  test("reports invalid configuration and suppresses the toast when quiet", async () => {
+    const invalid = createClient();
+    expect(
+      await AdaptiveThinkingPlugin({ client: invalid.client } as never, { enabled: "yes" }),
+    ).toEqual({});
+    expect(invalid.client.tui.showToast).toHaveBeenCalledWith({
       body: {
         variant: "error",
-        message: "Invalid Adaptive Thinking plugin configuration, see logs for details",
+        message: expect.stringContaining("Invalid Adaptive Thinking plugin configuration"),
       },
     });
-    expect(client.app.log).toHaveBeenCalledWith({
+    expect(invalid.client.app.log).toHaveBeenCalledWith({
       body: expect.objectContaining({
         level: "error",
-        service: "opencode-adaptive-thinking",
-        message: expect.stringContaining("Invalid Adaptive Thinking plugin configuration"),
+        message: expect.stringContaining("enabled must be a boolean"),
       }),
     });
-  });
 
-  test("suppresses configuration error toast when quiet is enabled", async () => {
-    const { client } = createClient("quiet-invalid-config");
-    const plugin = await AdaptiveThinkingPlugin({ client } as never, {
+    const quiet = createClient();
+    await AdaptiveThinkingPlugin({ client: quiet.client } as never, {
       enabled: "yes",
       quiet: true,
     });
+    expect(quiet.client.tui.showToast).not.toHaveBeenCalled();
+  });
 
-    expect(plugin).toEqual({});
-    expect(client.tui.showToast).not.toHaveBeenCalled();
-    expect(client.app.log).toHaveBeenCalledWith({
-      body: expect.objectContaining({
-        level: "error",
-        service: "opencode-adaptive-thinking",
-        message: expect.stringContaining("Invalid Adaptive Thinking plugin configuration"),
-      }),
+  test("rejects an invalid level without prompting", async () => {
+    const { client, prompts } = createClient([message("medium")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    expect(await set(plugin, "extreme", true, "invalid-level")).toContain(
+      "Invalid reasoning effort level",
+    );
+    expect(prompts).toHaveLength(0);
+  });
+
+  test("reports models without reasoning variants", async () => {
+    const { client, prompts } = createClient([message("medium")], {});
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    expect(await set(plugin, "high", true, "no-variants")).toContain(
+      "no valid reasoning effort levels",
+    );
+    expect(prompts).toHaveLength(0);
+  });
+
+  test("resets a temporary level to the level from the session history", async () => {
+    const { client, prompts } = createClient([message("medium")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    await set(plugin, "low", false, "temporary");
+    await idle(plugin, "temporary");
+
+    expect(prompts.map((prompt) => prompt.variant)).toEqual(["low", "medium"]);
+    expect(prompts[1]).toMatchObject({
+      agent: "agent",
+      model: { providerID: "provider", modelID: "model" },
+      parts: [{ synthetic: true, ignored: true }],
     });
   });
 
-  test("keeps log service name internal", async () => {
-    const sessionID = "fixed-service-name";
-    const { client, toolContext } = createClient(sessionID);
+  test("reads the model and variant from assistant messages", async () => {
+    const { client, prompts } = createClient([message("medium"), assistant("high")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    await set(plugin, "low", false, "assistant-shape");
+    await idle(plugin, "assistant-shape");
+
+    expect(prompts[0].model).toEqual({ providerID: "provider", modelID: "model" });
+    expect(prompts.map((prompt) => prompt.variant)).toEqual(["low", "high"]);
+  });
+
+  test("keeps the original baseline across repeated temporary changes", async () => {
+    const changed = createClient([message("medium")]);
+    const changedPlugin: any = await AdaptiveThinkingPlugin({ client: changed.client } as never);
+    await set(changedPlugin, "low", false, "repeat-different");
+    await set(changedPlugin, "high", false, "repeat-different");
+    await idle(changedPlugin, "repeat-different");
+
+    const repeated = createClient([message("medium")]);
+    const repeatedPlugin: any = await AdaptiveThinkingPlugin({ client: repeated.client } as never);
+    await set(repeatedPlugin, "low", false, "repeat-same");
+    await set(repeatedPlugin, "low", false, "repeat-same");
+    await idle(repeatedPlugin, "repeat-same");
+
+    expect(changed.prompts.map((prompt) => prompt.variant)).toEqual(["low", "high", "medium"]);
+    expect(repeated.prompts.map((prompt) => prompt.variant)).toEqual(["low", "low", "medium"]);
+  });
+
+  test("keeps a temporary reset pending after a failed attempt", async () => {
+    const { client } = createClient([message("medium")]);
+    client.session.promptAsync
+      .mockResolvedValueOnce({ error: undefined })
+      .mockResolvedValueOnce({ error: { data: { message: "unavailable" } } } as never)
+      .mockResolvedValueOnce({ error: undefined });
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    await set(plugin, "low", false, "reset-retry");
+    await idle(plugin, "reset-retry");
+    await idle(plugin, "reset-retry");
+
+    expect(client.session.promptAsync.mock.calls.map(([call]: any) => call.body.variant)).toEqual([
+      "low",
+      "medium",
+      "medium",
+    ]);
+    expect(client.app.log).toHaveBeenCalled();
+  });
+
+  test("reports a provider lookup failure without prompting", async () => {
+    const { client, prompts } = createClient([message("medium")]);
+    client.provider.list.mockResolvedValueOnce({
+      data: undefined,
+      error: { message: "down" },
+    } as never);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    expect(await set(plugin, "high", true, "provider-failure")).toContain(
+      "no valid reasoning effort levels",
+    );
+    expect(prompts).toHaveLength(0);
+    expect(client.app.log).toHaveBeenCalled();
+  });
+
+  test("does not reset a persisted level on idle", async () => {
+    const { client, prompts } = createClient([message("medium")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+
+    await set(plugin, "high", true, "persisted");
+    await idle(plugin, "persisted");
+    expect(prompts).toHaveLength(1);
+  });
+
+  test("returns an error instead of throwing when messages cannot be read", async () => {
+    const { client } = createClient([message("medium")]);
     client.session.messages.mockResolvedValueOnce({
+      data: undefined,
       error: { data: { message: "unavailable" } },
     } as never);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never, {
-      serviceName: "custom-service",
-    });
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
 
-    await setReasoningEffort(plugin, { level: "low", persist: false }, toolContext);
-
-    expect(client.app.log).toHaveBeenCalledWith({
-      body: expect.objectContaining({
-        service: "opencode-adaptive-thinking",
-      }),
-    });
+    expect(await set(plugin, "high", true, "fetch-failure")).toContain(
+      "could not read the session",
+    );
+    expect(client.app.log).toHaveBeenCalled();
   });
 
-  test("uses configured tool name and description", async () => {
-    const sessionID = "custom-tool";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never, {
-      toolName: "adjust_reasoning",
-      toolDescription: "Adjust reasoning depth for the next response",
-    });
+  test("ignores a cached level that the current model does not support", async () => {
+    const { client } = createClient([message("medium")]);
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+    await set(plugin, "high", true, "stale-cache");
 
-    expect(plugin.tool?.set_reasoning_effort).toBeUndefined();
-    expect(plugin.tool?.adjust_reasoning?.description).toBe(
-      "Adjust reasoning depth for the next response",
-    );
-
-    await setReasoningEffort(
-      plugin,
-      { level: "high", persist: true },
-      toolContext,
-      "adjust_reasoning",
-    );
-
-    expect(client.session.promptAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ body: expect.objectContaining({ variant: "high" }) }),
-    );
-  });
-
-  test("uses configured system prompt guidance", async () => {
-    const sessionID = "custom-system-prompt";
-    const { client } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never, {
-      systemPrompt: "Prefer the cheapest reasoning level that can safely complete the task.",
-    });
-    const system: string[] = [];
-
-    await plugin["experimental.chat.system.transform"]!(
-      {
-        sessionID,
-        model: { variants },
-      } as never,
-      { system },
-    );
-
-    expect(system).toHaveLength(1);
-    expect(system[0]).toContain(
-      "Prefer the cheapest reasoning level that can safely complete the task.",
-    );
-    expect(system[0]).not.toContain("You MUST manage reasoning effort actively");
-  });
-
-  test("ignores cached reasoning effort when it is invalid for the current model", async () => {
-    const sessionID = "stale-cached-variant";
-    const switchedModelVariants = {
-      low: {},
-      medium: {},
-    };
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-    const system: string[] = [];
-
-    await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
-    await plugin["experimental.chat.system.transform"]!(
-      {
-        sessionID,
-        model: { variants: switchedModelVariants },
-      } as never,
-      { system },
-    );
-
-    expect(system[0]).toContain("Current reasoning effort level: medium.");
+    const system: Array<string> = [];
+    await transform(plugin, "stale-cache", system, { variants: { low: {}, medium: {} } });
     expect(system[0]).toContain("Valid reasoning effort levels for this session: low, medium.");
     expect(system[0]).not.toContain("Current reasoning effort level: high.");
   });
 
-  test("falls back to the newest agent variant when messages do not expose a model variant", async () => {
-    const sessionID = "newest-agent-fallback";
-    const { client } = createClient(sessionID, [
-      createAgentMessage("old-agent"),
-      createAgentMessage("new-agent"),
-    ]);
-    client.app.agents.mockResolvedValueOnce({
-      data: [
-        { name: "old-agent", variant: "high" },
-        { name: "new-agent", variant: "low" },
-      ],
-      error: undefined,
-    } as never);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-    const system: string[] = [];
+  test("falls back to the agent variant when history has none", async () => {
+    const { client } = createClient([message(undefined, "worker")], variants, { worker: "low" });
+    const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
 
-    await plugin["experimental.chat.system.transform"]!(
-      {
-        sessionID,
-        model: { variants },
-      } as never,
-      { system },
-    );
-
+    const system: Array<string> = [];
+    await transform(plugin, "agent-fallback", system, {});
     expect(system[0]).toContain("Current reasoning effort level: low.");
   });
 
-  test("resets a temporary reasoning effort once and keeps the reset prompt ignored", async () => {
-    const sessionID = "temporary-reset";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
+  test("evicts the oldest session state when the cache is full", async () => {
+    const oldest = createClient([message("medium")]);
+    const oldestPlugin: any = await AdaptiveThinkingPlugin({ client: oldest.client } as never);
+    await set(oldestPlugin, "low", false, "lru-0");
 
-    await setReasoningEffort(plugin, { level: "low", persist: false }, toolContext);
-    await plugin.event!({
-      event: { type: "session.idle", properties: { sessionID } },
-    } as never);
-    await plugin.event!({
-      event: { type: "session.idle", properties: { sessionID } },
-    } as never);
-
-    expect(client.session.promptAsync).toHaveBeenCalledTimes(2);
-    const promptCalls = client.session.promptAsync.mock.calls as Array<Array<unknown>>;
-    const secondPrompt = promptCalls[1]?.[0];
-    expect(secondPrompt).toMatchObject({
-      body: {
-        agent: "agent",
-        model: { providerID: "provider", modelID: "model" },
-        variant: "medium",
-        parts: [{ ignored: true, synthetic: true }],
-      },
-    });
-  });
-
-  test("evicts oldest session state when the cache is full", async () => {
-    const oldest = await touchTemporarySession("lru-oldest");
-
-    for (let i = 0; i < 500; i++) {
-      await touchTemporarySession(`lru-session-${i}`);
+    for (let i = 1; i <= 500; i++) {
+      const { client } = createClient([message("medium")]);
+      const plugin: any = await AdaptiveThinkingPlugin({ client } as never);
+      await set(plugin, "low", false, `lru-${i}`);
     }
 
-    await oldest.plugin.event!({
-      event: { type: "session.idle", properties: { sessionID: "lru-oldest" } },
-    } as never);
-
-    expect(oldest.client.session.promptAsync).toHaveBeenCalledTimes(1);
-  });
-
-  test("does not reset persisted reasoning effort on idle", async () => {
-    const sessionID = "persisted-effort";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-
-    await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
-    await plugin.event!({
-      event: { type: "session.idle", properties: { sessionID } },
-    } as never);
-
-    expect(client.session.promptAsync).toHaveBeenCalledTimes(1);
-  });
-
-  test("rejects invalid reasoning effort levels before prompting", async () => {
-    const sessionID = "invalid-level";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-
-    const result = await setReasoningEffort(
-      plugin,
-      { level: "extreme", persist: true },
-      toolContext,
-    );
-
-    expect(result).toContain("Invalid reasoning effort level");
-    expect(client.session.promptAsync).not.toHaveBeenCalled();
-  });
-
-  test("handles provider lookup failure without prompting", async () => {
-    const sessionID = "provider-lookup-failure";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    client.provider.list.mockResolvedValueOnce({
-      error: { data: { message: "provider unavailable" } },
-    } as never);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-
-    const result = await setReasoningEffort(plugin, { level: "high", persist: true }, toolContext);
-
-    expect(result).toContain("no valid reasoning effort levels");
-    expect(client.session.promptAsync).not.toHaveBeenCalled();
-    expect(client.app.log).toHaveBeenCalledWith({
-      body: expect.objectContaining({
-        level: "error",
-        message: expect.stringContaining("Failed to retrieve providers"),
-      }),
-    });
-  });
-
-  test("retries a failed temporary reset and clears it after a later success", async () => {
-    const sessionID = "recoverable-reset-failure";
-    const { client, toolContext } = createClient(sessionID, [createMessage("medium")]);
-    client.session.promptAsync
-      .mockResolvedValueOnce({ error: undefined } as never)
-      .mockResolvedValueOnce({ error: { data: { message: "reset failed" } } } as never)
-      .mockResolvedValueOnce({ error: undefined } as never);
-    const plugin = await AdaptiveThinkingPlugin({ client } as never);
-
-    await setReasoningEffort(plugin, { level: "low", persist: false }, toolContext);
-    await plugin.event!({
-      event: { type: "session.idle", properties: { sessionID } },
-    } as never);
-    await plugin.event!({
-      event: { type: "session.idle", properties: { sessionID } },
-    } as never);
-    await plugin.event!({
-      event: { type: "session.idle", properties: { sessionID } },
-    } as never);
-
-    expect(client.session.promptAsync).toHaveBeenCalledTimes(3);
-    expect(client.app.log).toHaveBeenCalledWith({
-      body: expect.objectContaining({
-        level: "error",
-        message: expect.stringContaining("Failed to reset reasoning effort"),
-      }),
-    });
+    await idle(oldestPlugin, "lru-0");
+    expect(oldest.prompts).toHaveLength(1);
   });
 });
