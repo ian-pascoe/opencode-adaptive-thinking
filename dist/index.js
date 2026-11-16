@@ -598,10 +598,15 @@ const AdaptiveThinkingPlugin = Plugin.define({
 				`To change your reasoning effort, use the \`${config.toolName}\` tool with one of the valid levels.`,
 				"Only call it when the task complexity justifies changing levels."
 			].filter(Boolean).join(" ");
-			event.system.push({
+			const existingSystem = event.system[0];
+			if (existingSystem === void 0 || !existingSystem.text) event.system.push({
 				type: "text",
 				text: guidance
 			});
+			else event.system[0] = {
+				type: "text",
+				text: existingSystem.text + "\n\n" + guidance
+			};
 		});
 		await ctx.session.hook("model.request", (event) => {
 			if (event.kind !== "primary") return;

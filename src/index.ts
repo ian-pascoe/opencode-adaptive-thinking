@@ -813,7 +813,15 @@ export const AdaptiveThinkingPlugin = Plugin.define({
         .filter(Boolean)
         .join(" ");
 
-      event.system.push({ type: "text", text: guidance });
+      // Merge into the first system message instead of pushing a second one.
+      // Strict chat templates (e.g. llama.cpp) require exactly one system message
+      // and reject additional ones, breaking template rendering.
+      const existingSystem = event.system[0];
+      if (existingSystem === undefined || !existingSystem.text) {
+        event.system.push({ type: "text", text: guidance });
+      } else {
+        event.system[0] = { type: "text", text: existingSystem.text + "\n\n" + guidance };
+      }
     });
 
     // Variant header/body overrides cannot travel through `event.options`. Apply them to the one
