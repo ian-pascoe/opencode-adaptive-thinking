@@ -101,9 +101,6 @@ If configuration errors appear, check the plugin options against the documented 
 
 ```bash
 pnpm install
-pnpm format:check
-pnpm lint
-pnpm test
-pnpm typecheck
-pnpm build
 ```
+
+The pre-commit hook runs `oxfmt --check` and `oxlint` on staged files only (`pnpm lint:staged`). Typecheck, tests, and the build are left to CI. Check a change locally with targeted commands: the test files it touches (`pnpm exec vitest run <file>`), `pnpm typecheck`, and format and lint on the changed files.
